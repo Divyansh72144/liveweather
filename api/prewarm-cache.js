@@ -1,6 +1,11 @@
 import { getCities } from '../backend/cities.js'
 import { fetchWithRetry, processHourlyData } from '../backend/utils/fetchWithRetry.js'
-import { kv } from '@vercel/kv'
+import { Redis } from '@upstash/redis'
+
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN,
+})
 
 export default async function handler(req, res) {
   // Security check for cron-job.org
@@ -18,7 +23,10 @@ export default async function handler(req, res) {
     for (const r of responses) {
       if (r.success && r.data?.hourly) {
         const processed = processHourlyData(r.data)
-        await kv.set(`city:${r.city.id}`, JSON.stringify({ data: processed, lastUpdated: Date.now() }))
+        await redis.set(`city:${r.city.id}`, {
+          data: processed,
+          lastUpdated: Date.now()
+        })
         loaded++
       }
     }
