@@ -1,0 +1,19 @@
+{
+  "name": "hazard-map-mcp-server",
+  "version": "1.0.0",
+  "description": "MCP Server for Hazard Map - External API access",
+  "type": "module",
+  "main": "mcp-server.js",
+  "bin": {
+    "hazard-map-mcp": "./mcp-server.js"
+  },
+  "scripts": {
+    "start": "node mcp-server.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
