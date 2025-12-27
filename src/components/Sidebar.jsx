@@ -8,9 +8,7 @@ export default function Sidebar({ sortedCities, sortBy, sortOrder, onSort, onCit
   const citiesListRef = useRef(null)
 
   useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth <= 768)
-    }
+    const checkMobile = () => setIsMobile(window.innerWidth <= 768)
     checkMobile()
     window.addEventListener('resize', checkMobile)
     return () => window.removeEventListener('resize', checkMobile)
@@ -21,44 +19,13 @@ export default function Sidebar({ sortedCities, sortBy, sortOrder, onSort, onCit
     const sidebar = sidebarRef.current
     if (!sidebar || !isMobile) return
 
-    // Remove all position classes
     sidebar.classList.remove('sheet-expanded', 'dragging')
-
-    // Add current position class
     if (sheetPosition === 'expanded') {
       sidebar.classList.add('sheet-expanded')
     }
-    // collapsed is default (no class)
   }, [sheetPosition, isMobile])
 
-  // Expand when scrolling in cities list
-  useEffect(() => {
-    const citiesList = citiesListRef.current
-    if (!citiesList || !isMobile) return
-
-    let isScrolling = false
-    let scrollTimeout = null
-
-    const handleScroll = () => {
-      if (!isScrolling) {
-        isScrolling = true
-        // Expand when user scrolls
-        setSheetPosition('expanded')
-      }
-
-      clearTimeout(scrollTimeout)
-      scrollTimeout = setTimeout(() => {
-        isScrolling = false
-      }, 150)
-    }
-
-    citiesList.addEventListener('scroll', handleScroll)
-    return () => {
-      citiesList.removeEventListener('scroll', handleScroll)
-      clearTimeout(scrollTimeout)
-    }
-  }, [isMobile])
-
+  // Handle drag to expand/collapse
   useEffect(() => {
     const sidebar = sidebarRef.current
     if (!sidebar || !isMobile) return
@@ -66,152 +33,199 @@ export default function Sidebar({ sortedCities, sortBy, sortOrder, onSort, onCit
     const dragHandle = sidebar.querySelector('.mobile-drag-handle')
     if (!dragHandle) return
 
-    let isDragging = false
     let startY = 0
-    let currentTranslateY = 0
+    let currentY = 0
+    let isDragging = false
+    const COLLAPSED_HEIGHT = 320
 
-    const getPositionHeight = (position) => {
-      switch(position) {
-        case 'expanded': return 0
-        case 'collapsed': return 280
-        default: return 280
-      }
-    }
-
-    const snapToPosition = (position) => {
-      setSheetPosition(position)
-      sidebar.classList.remove('dragging')
-    }
-
-    const handleDragStart = (clientY) => {
+    const handleStart = (clientY) => {
       isDragging = true
       startY = clientY
-
-      // Get current translate Y value
-      const style = window.getComputedStyle(sidebar)
-      const matrix = new WebKitCSSMatrix(style.transform)
-      currentTranslateY = matrix.m42
-
+      currentY = clientY
       sidebar.classList.add('dragging')
     }
 
-    const handleDragMove = (clientY) => {
+    const handleMove = (clientY) => {
       if (!isDragging) return
 
+      currentY = clientY
       const deltaY = clientY - startY
-      const newTranslateY = currentTranslateY + deltaY
+      const maxDrag = window.innerHeight - COLLAPSED_HEIGHT
 
-      // Constrain dragging
-      const minTranslate = 0 // fully expanded (can't go above)
-      const maxTranslate = window.innerHeight - 280 // fully collapsed (can't go below)
-
-      const constrainedTranslate = Math.max(minTranslate, Math.min(maxTranslate, newTranslateY))
-      sidebar.style.transform = `translateY(${constrainedTranslateY}px)`
+      // Calculate visual position
+      let translateY
+      if (sheetPosition === 'collapsed') {
+        // Starting from collapsed (at bottom), dragging up (negative delta)
+        translateY = Math.max(-maxDrag, Math.min(0, -deltaY))
+        sidebar.style.transform = `translateY(calc(100% - ${COLLAPSED_HEIGHT}px + ${translateY}px))`
+      } else {
+        // Starting from expanded (at top), dragging down (positive delta)
+        translateY = Math.max(0, Math.min(maxDrag, deltaY))
+        sidebar.style.transform = `translateY(${translateY}px)`
+      }
     }
 
-    const handleDragEnd = (clientY, velocity) => {
+    const handleEnd = () => {
       if (!isDragging) return
       isDragging = false
+      sidebar.classList.remove('dragging')
+      sidebar.style.transform = ''
 
-      const style = window.getComputedStyle(sidebar)
-      const matrix = new WebKitCSSMatrix(style.transform)
-      const currentY = Math.abs(matrix.m42)
+      // Determine action based on drag distance and direction
+      const deltaTotal = currentY - startY
+      const threshold = 30 // minimum drag distance (lower for better UX)
 
-      // Detect positions
-      const collapsedY = getPositionHeight('collapsed')
-      const expandedY = getPositionHeight('expanded')
-
-      // Calculate velocity for flick detection
-      const velocityThreshold = 0.3
-
-      // If flicking up fast
-      if (velocity < -velocityThreshold) {
-        snapToPosition('expanded')
-        return
-      }
-
-      // If flicking down fast
-      if (velocity > velocityThreshold) {
-        snapToPosition('collapsed')
-        return
-      }
-
-      // Find nearest position
-      const distCollapsed = Math.abs(currentY - collapsedY)
-      const distExpanded = Math.abs(currentY - expandedY)
-
-      if (distCollapsed < distExpanded) {
-        snapToPosition('collapsed')
+      if (sheetPosition === 'collapsed') {
+        // Drag up from collapsed to expand
+        if (deltaTotal < -threshold) {
+          setSheetPosition('expanded')
+        }
       } else {
-        snapToPosition('expanded')
+        // Drag down from expanded to collapse
+        if (deltaTotal > threshold) {
+          setSheetPosition('collapsed')
+        }
       }
     }
 
-    // Touch events
-    let touchStartY = 0
-    let touchStartTime = 0
-
-    const handleTouchStart = (e) => {
-      touchStartY = e.touches[0].clientY
-      touchStartTime = Date.now()
-      handleDragStart(touchStartY)
+    const onTouchStart = (e) => {
+      handleStart(e.touches[0].clientY)
     }
 
-    const handleTouchMove = (e) => {
-      handleDragMove(e.touches[0].clientY)
+    const onTouchMove = (e) => {
+      if (!isDragging) return
+      handleMove(e.touches[0].clientY)
     }
 
-    const handleTouchEnd = (e) => {
-      const touchEndY = e.changedTouches[0].clientY
-      const touchEndTime = Date.now()
-      const deltaTime = touchEndTime - touchStartTime
-      const velocity = (touchEndY - touchStartY) / deltaTime
-
-      handleDragEnd(touchEndY, velocity)
+    const onTouchEnd = () => {
+      handleEnd()
     }
 
-    // Mouse events
-    let mouseStartY = 0
-    let mouseStartTime = 0
-
-    const handleMouseDown = (e) => {
-      mouseStartY = e.clientY
-      mouseStartTime = Date.now()
-      handleDragStart(mouseStartY)
+    const onMouseDown = (e) => {
+      handleStart(e.clientY)
     }
 
-    const handleMouseMove = (e) => {
-      handleDragMove(e.clientY)
+    const onMouseMove = (e) => {
+      if (!isDragging) return
+      handleMove(e.clientY)
     }
 
-    const handleMouseUp = (e) => {
-      const mouseEndTime = Date.now()
-      const deltaTime = mouseEndTime - mouseStartTime
-      const velocity = (e.clientY - mouseStartY) / deltaTime
-
-      handleDragEnd(e.clientY, velocity)
+    const onMouseUp = () => {
+      handleEnd()
     }
 
-    dragHandle.addEventListener('touchstart', handleTouchStart, { passive: true })
-    dragHandle.addEventListener('touchmove', handleTouchMove, { passive: true })
-    dragHandle.addEventListener('touchend', handleTouchEnd)
-    dragHandle.addEventListener('mousedown', handleMouseDown)
+    dragHandle.addEventListener('touchstart', onTouchStart, { passive: true })
+    dragHandle.addEventListener('touchmove', onTouchMove, { passive: true })
+    dragHandle.addEventListener('touchend', onTouchEnd)
+    dragHandle.addEventListener('mousedown', onMouseDown)
+
+    document.addEventListener('mousemove', onMouseMove)
+    document.addEventListener('mouseup', onMouseUp)
 
     return () => {
-      dragHandle.removeEventListener('touchstart', handleTouchStart)
-      dragHandle.removeEventListener('touchmove', handleTouchMove)
-      dragHandle.removeEventListener('touchend', handleTouchEnd)
-      dragHandle.removeEventListener('mousedown', handleMouseDown)
+      dragHandle.removeEventListener('touchstart', onTouchStart)
+      dragHandle.removeEventListener('touchmove', onTouchMove)
+      dragHandle.removeEventListener('touchend', onTouchEnd)
+      dragHandle.removeEventListener('mousedown', onMouseDown)
+      document.removeEventListener('mousemove', onMouseMove)
+      document.removeEventListener('mouseup', onMouseUp)
     }
-  }, [isMobile, sheetPosition])
+  }, [isMobile, sheetPosition, setSheetPosition])
+
+  // Swipe down on sheet to close (when expanded)
+  useEffect(() => {
+    const sidebar = sidebarRef.current
+    if (!sidebar || !isMobile) return
+
+    let touchStartY = 0
+    let isSwiping = false
+
+    const onTouchStart = (e) => {
+      // Only track if sheet is expanded and touch is near top
+      if (sheetPosition === 'expanded') {
+        const touch = e.touches[0]
+        touchStartY = touch.clientY
+        isSwiping = true
+      }
+    }
+
+    const onTouchMove = (e) => {
+      if (!isSwiping || sheetPosition !== 'expanded') return
+
+      const touch = e.touches[0]
+      const deltaY = touch.clientY - touchStartY
+
+      // Only if swiping down from top area
+      if (deltaY > 50 && touch.clientY < 150) {
+        isSwiping = false
+        setSheetPosition('collapsed')
+      }
+    }
+
+    const onTouchEnd = () => {
+      isSwiping = false
+    }
+
+    sidebar.addEventListener('touchstart', onTouchStart, { passive: true })
+    sidebar.addEventListener('touchmove', onTouchMove, { passive: true })
+    sidebar.addEventListener('touchend', onTouchEnd)
+
+    return () => {
+      sidebar.removeEventListener('touchstart', onTouchStart)
+      sidebar.removeEventListener('touchmove', onTouchMove)
+      sidebar.removeEventListener('touchend', onTouchEnd)
+    }
+  }, [isMobile, sheetPosition, setSheetPosition])
+
+  // Expand on scroll (when collapsed)
+  useEffect(() => {
+    const list = citiesListRef.current
+    if (!list || !isMobile) return
+
+    const onScroll = () => {
+      // If user tries to scroll while collapsed, expand
+      if (sheetPosition === 'collapsed') {
+        setSheetPosition('expanded')
+      }
+    }
+
+    list.addEventListener('scroll', onScroll, { passive: true })
+    return () => {
+      list.removeEventListener('scroll', onScroll)
+    }
+  }, [isMobile, sheetPosition, setSheetPosition])
+
+  const handleCityClick = (city) => {
+    onCityClick(city)
+    if (isMobile) {
+      setSheetPosition('collapsed')
+    }
+  }
 
   return (
-    <aside
-      ref={sidebarRef}
-      className="sidebar"
-    >
-      {/* Mobile drag handle indicator */}
-      <div className="mobile-drag-handle"></div>
+    <>
+      {/* Mobile backdrop */}
+      {isMobile && sheetPosition === 'expanded' && (
+        <div
+          className="mobile-backdrop"
+          onClick={() => setSheetPosition('collapsed')}
+        />
+      )}
+
+      <aside ref={sidebarRef} className="sidebar">
+        {/* Mobile drag handle */}
+        <div className="mobile-drag-handle"></div>
+
+        {/* Close button when expanded */}
+        {isMobile && sheetPosition === 'expanded' && (
+          <button
+            className="mobile-close-button"
+            onClick={() => setSheetPosition('collapsed')}
+            aria-label="Close"
+          >
+            ✕
+          </button>
+        )}
 
       <h2>
         {searchQuery
@@ -294,12 +308,7 @@ export default function Sidebar({ sortedCities, sortBy, sortOrder, onSort, onCit
           <div
             key={city.id}
             className="city-list-item"
-            onClick={() => {
-              onCityClick(city)
-              if (isMobile && setSheetPosition) {
-                setSheetPosition('collapsed')
-              }
-            }}
+            onClick={() => handleCityClick(city)}
           >
             <span className="city-icon">
               <img
@@ -321,5 +330,6 @@ export default function Sidebar({ sortedCities, sortBy, sortOrder, onSort, onCit
         ))}
       </div>
     </aside>
+    </>
   )
 }

@@ -17,18 +17,22 @@ function MapController({ selectedCity, markerRefs }) {
 
   useEffect(() => {
     if (selectedCity) {
-      // First fly to the city
-      map.flyTo([selectedCity.lat, selectedCity.lon], 10, {
+      // Check if mobile for different offset
+      const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768
+      const latOffset = isMobile ? -0.1 : -0.05
+
+      // Fly to city with small offset to position popup lower
+      map.flyTo([selectedCity.lat - latOffset, selectedCity.lon], 10, {
         duration: 1.5
       })
 
-      // Then open the popup after the flight completes
+      // Open popup after flyTo completes
       const timer = setTimeout(() => {
         const markerRef = markerRefs.current[selectedCity.id]
         if (markerRef && markerRef.openPopup) {
           markerRef.openPopup()
         }
-      }, 1600) // Wait for flyTo animation to complete
+      }, 1600)
 
       return () => clearTimeout(timer)
     }
