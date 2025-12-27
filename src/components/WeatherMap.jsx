@@ -148,6 +148,15 @@ export default function WeatherMap({ weatherData, selectedCity, onCityClick }) {
                       <span className="popup-wind">💨 {weather.windSpeed} km/h</span>
                     </div>
                   </div>
+                  <div className="popup-coords">
+                    <span className="coords-text">{city.lat.toFixed(4)}°, {city.lon.toFixed(4)}°</span>
+                    <button
+                      className="copy-coords-btn"
+                      onClick={() => navigator.clipboard.writeText(`${city.lat}, ${city.lon}`)}
+                    >
+                      Copy coordinates
+                    </button>
+                  </div>
                   <div className="popup-time">
                     Local time: {new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false })}
                   </div>

@@ -104,7 +104,7 @@ function App() {
   if (loading) {
     return (
       <div className="app">
-        <Header />
+        <Header citiesCount={sortedCities.length} />
         <div className="loading-overlay">
           <div className="loading-spinner"></div>
           <p>Loading weather data...</p>
@@ -115,7 +115,7 @@ function App() {
 
   return (
     <div className="app">
-      <Header />
+      <Header citiesCount={sortedCities.length} />
 
       <Sidebar
         sortedCities={sortedCities}

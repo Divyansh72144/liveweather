@@ -41,17 +41,49 @@ body {
   padding: 1rem 2rem;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   z-index: 1000;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  overflow: hidden;
 }
+
+
 
 .header-content h1 {
   font-size: 1.5rem;
   color: #1f2937;
+
   margin-bottom: 0.25rem;
 }
 
 .subtitle {
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   color: #6b7280;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.creator-section {
+  display: flex;
+  align-items: center;
+}
+
+.creator-link {
+  display: inline-block;
+  font-size: 0.9rem;
+  color: #3b82f6;
+  text-decoration: none;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: color 0.2s;
+  flex-shrink: 0;
+}
+
+.creator-link:hover {
+  color: #2563eb;
+  text-decoration: underline;
 }
 
 /* Sidebar */
@@ -84,14 +116,14 @@ body {
 /* Mobile drag handle */
 .mobile-drag-handle {
   display: none;
-  width: 40px;
-  height: 4px;
+  width: 48px;
+  height: 5px;
   background: #d1d5db;
-  border-radius: 2px;
-  margin: 12px auto 8px;
+  border-radius: 3px;
+  margin: 16px auto 12px;
   cursor: grab;
-  padding: 8px 0;
   touch-action: none;
+  flex-shrink: 0;
 }
 
 .mobile-drag-handle:active {
@@ -480,6 +512,37 @@ body {
   color: #6b7280;
 }
 
+.popup-coords {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.coords-text {
+  font-size: 0.75rem;
+  color: #6b7280;
+  font-family: monospace;
+}
+
+.copy-coords-btn {
+  font-size: 0.7rem;
+  color: #3b82f6;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+  transition: color 0.2s;
+}
+
+.copy-coords-btn:hover {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
 .popup-time {
   margin-top: 0.5rem;
   font-size: 0.75rem;
@@ -518,7 +581,34 @@ body {
 @media (max-width: 768px) {
   .app-header {
     left: 0;
-    padding: 1rem;
+    padding: 0.75rem 1rem;
+    flex-direction: row;
+    height: auto;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .header-content {
+    margin-right: auto;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .header-content h1 {
+    white-space: normal;
+  }
+
+  .subtitle {
+    font-size: 0.9rem;
+    white-space: normal;
+  }
+
+  .creator-link {
+    font-size: 0.9rem;
+    white-space: normal;
+    flex-shrink: 0;
+    max-width: 150px;
+    text-align: right;
   }
 
   .mobile-drag-handle {
