@@ -12,6 +12,7 @@ import { getWeatherCategory } from './utils/weather'
 const BACKEND_API = import.meta.env.VITE_BACKEND_API_URL || 'http://localhost:4000'
 
 function App() {
+  const [sheetPosition, setSheetPosition] = useState('collapsed') // collapsed, half, expanded
   const [weatherData, setWeatherData] = useState({})
   const [loading, setLoading] = useState(true)
   const [selectedCity, setSelectedCity] = useState(null)
@@ -126,6 +127,8 @@ function App() {
         onSearchChange={setSearchQuery}
         weatherFilter={weatherFilter}
         onWeatherFilterChange={setWeatherFilter}
+        sheetPosition={sheetPosition}
+        setSheetPosition={setSheetPosition}
       />
 
       <WeatherMap

@@ -1,26 +1,57 @@
-import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet'
+import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet'
 import MarkerClusterGroup from 'react-leaflet-cluster'
 import L from 'leaflet'
+import { useEffect, useRef } from 'react'
 import { CITIES } from '../../backend/cities.js'
 
 import { createWeatherIcon } from '../utils/leafletConfig'
 import { getWeatherIconUrl, getWeatherDescription } from '../utils/weather'
+
 const WORLD_BOUNDS = [
-  [-85, -180],
-  [85, 180],
+  [-90, -180],
+  [90, 180],
 ]
+
+function MapController({ selectedCity, markerRefs }) {
+  const map = useMap()
+
+  useEffect(() => {
+    if (selectedCity) {
+      // First fly to the city
+      map.flyTo([selectedCity.lat, selectedCity.lon], 10, {
+        duration: 1.5
+      })
+
+      // Then open the popup after the flight completes
+      const timer = setTimeout(() => {
+        const markerRef = markerRefs.current[selectedCity.id]
+        if (markerRef && markerRef.openPopup) {
+          markerRef.openPopup()
+        }
+      }, 1600) // Wait for flyTo animation to complete
+
+      return () => clearTimeout(timer)
+    }
+  }, [selectedCity, map, markerRefs])
+
+  return null
+}
+
 export default function WeatherMap({ weatherData, selectedCity, onCityClick }) {
+  const minZoom = typeof window !== 'undefined' && window.innerHeight > 960 ? 3.2 : 2
+  const markerRefs = useRef({})
+
   return (
-   <MapContainer
-  center={selectedCity ? [selectedCity.lat, selectedCity.lon] : [20, 0]}
-  zoom={selectedCity ? 6 : 2}
-  minZoom={2}
-  maxZoom={18}
-  maxBounds={WORLD_BOUNDS}
-  maxBoundsViscosity={1.0}
-  worldCopyJump={false}
-  style={{ width: '100%', height: '100%' }}
->
+    <MapContainer
+      center={[20, 0]}
+      zoom={2}
+      minZoom={minZoom}
+      maxZoom={30}
+      maxBounds={WORLD_BOUNDS}
+      maxBoundsViscosity={1.0}
+      worldCopyJump={false}
+    >
+      <MapController selectedCity={selectedCity} markerRefs={markerRefs} />
 
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -89,6 +120,11 @@ export default function WeatherMap({ weatherData, selectedCity, onCityClick }) {
                 city.country
               )}
               temp={weather.temperature}
+              ref={(marker) => {
+                if (marker) {
+                  markerRefs.current[city.id] = marker
+                }
+              }}
               eventHandlers={{
                 click: () => onCityClick(city)
               }}
