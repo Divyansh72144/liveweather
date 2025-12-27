@@ -80,13 +80,6 @@ export default function Sidebar({ sortedCities, sortBy, sortOrder, onSort, onCit
         </button>
       </div>
 
-      {loadingMore && (
-        <div className="loading-more">
-          <div className="loading-spinner-small"></div>
-          <span>Loading more cities...</span>
-        </div>
-      )}
-
       <div className="cities-list">
         {sortedCities.map(city => (
           <div

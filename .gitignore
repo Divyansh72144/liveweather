@@ -37,3 +37,6 @@ backend/.env.production
 
 # Claude Code
 .claude
+
+.vercel
+.env*.local
