@@ -8,8 +8,9 @@ const redis = new Redis({
 })
 
 export default async function handler(req, res) {
-  // Security check for cron-job.org
-  if (req.headers['x-cron-secret'] !== process.env.CRON_SECRET) {
+  // Security check for cron-job.org (header) or manual testing (URL param)
+  const secret = req.headers['x-cron-secret'] || req.query.secret
+  if (secret !== process.env.CRON_SECRET) {
     return res.status(401).json({ error: 'Unauthorized' })
   }
 
