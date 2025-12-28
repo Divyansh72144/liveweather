@@ -177,6 +177,103 @@ export default function Sidebar({ sortedCities, sortBy, sortOrder, onSort, onCit
     }
   }, [isMobile, sheetPosition, setSheetPosition])
 
+  // Swipe up to expand (more sensitive) - works anywhere in sidebar
+  useEffect(() => {
+    const sidebar = sidebarRef.current
+    if (!sidebar || !isMobile) return
+
+    let touchStartY = 0
+    let isSwipeUp = false
+
+    const onTouchStart = (e) => {
+      if (sheetPosition === 'collapsed') {
+        const touch = e.touches[0]
+        touchStartY = touch.clientY
+        isSwipeUp = true
+      }
+    }
+
+    const onTouchMove = (e) => {
+      if (!isSwipeUp || sheetPosition !== 'collapsed') return
+
+      const touch = e.touches[0]
+      const deltaY = touch.clientY - touchStartY
+
+      // Swipe up (negative deltaY) - more sensitive, lower threshold
+      if (deltaY < -20) {
+        isSwipeUp = false
+        setSheetPosition('expanded')
+      }
+    }
+
+    const onTouchEnd = () => {
+      isSwipeUp = false
+    }
+
+    sidebar.addEventListener('touchstart', onTouchStart, { passive: true })
+    sidebar.addEventListener('touchmove', onTouchMove, { passive: true })
+    sidebar.addEventListener('touchend', onTouchEnd)
+
+    return () => {
+      sidebar.removeEventListener('touchstart', onTouchStart)
+      sidebar.removeEventListener('touchmove', onTouchMove)
+      sidebar.removeEventListener('touchend', onTouchEnd)
+    }
+  }, [isMobile, sheetPosition, setSheetPosition])
+
+  // Expand on click (when collapsed) - cities list and search area
+  useEffect(() => {
+    if (!isMobile || sheetPosition === 'expanded') return
+
+    const sidebar = sidebarRef.current
+    if (!sidebar) return
+
+    const citiesList = sidebar.querySelector('.cities-list')
+    const searchContainer = sidebar.querySelector('.search-container')
+    const searchInput = sidebar.querySelector('.search-input')
+
+    const expandSheet = (e) => {
+      // Don't expand if clicking on interactive elements (except search input background)
+      if (e.target.closest('button') || e.target.closest('.city-list-item')) {
+        return
+      }
+      if (sheetPosition === 'collapsed') {
+        setSheetPosition('expanded')
+      }
+    }
+
+    const expandOnFocus = () => {
+      if (sheetPosition === 'collapsed') {
+        setSheetPosition('expanded')
+      }
+    }
+
+    // Add click handlers to expandable areas
+    if (citiesList) {
+      citiesList.addEventListener('click', expandSheet)
+    }
+    if (searchContainer) {
+      searchContainer.addEventListener('click', expandSheet)
+    }
+
+    // Expand when search input is focused
+    if (searchInput) {
+      searchInput.addEventListener('focus', expandOnFocus)
+    }
+
+    return () => {
+      if (citiesList) {
+        citiesList.removeEventListener('click', expandSheet)
+      }
+      if (searchContainer) {
+        searchContainer.removeEventListener('click', expandSheet)
+      }
+      if (searchInput) {
+        searchInput.removeEventListener('focus', expandOnFocus)
+      }
+    }
+  }, [isMobile, sheetPosition, setSheetPosition])
+
   // Expand on scroll (when collapsed)
   useEffect(() => {
     const list = citiesListRef.current
