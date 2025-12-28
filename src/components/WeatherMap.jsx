@@ -19,6 +19,7 @@ function MapController({ selectedCity, markerRefs }) {
     if (selectedCity) {
       // Check if mobile for different offset
       const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768
+      // Increase lat offset on mobile to position popup higher and avoid sidebar
       const latOffset = isMobile ? -0.1 : -0.05
 
       // Fly to city with small offset to position popup lower
@@ -133,7 +134,9 @@ export default function WeatherMap({ weatherData, selectedCity, onCityClick }) {
                 click: () => onCityClick(city)
               }}
             >
-              <Popup>
+              <Popup
+                offset={typeof window !== 'undefined' && window.innerWidth <= 768 ? [0, -40] : [0, 0]}
+              >
                 <div className="popup-content">
                   <h3>{city.name}, {city.country}</h3>
                   <div className="popup-weather">
@@ -143,7 +146,6 @@ export default function WeatherMap({ weatherData, selectedCity, onCityClick }) {
                       style={{ width: '64px', height: '64px' }}
                     />
                     <div className="popup-details">
-                      <span className="popup-desc">{getWeatherDescription(weather.weatherCode)}</span>
                       <span className="popup-temp">{weather.temperature}°C</span>
                       <span className="popup-wind">💨 {weather.windSpeed} km/h</span>
                     </div>

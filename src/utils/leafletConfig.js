@@ -79,6 +79,6 @@ export const createWeatherIcon = (weatherCode, temp, cityName, countryName) => {
     `,
     iconSize: [70, 145],
     iconAnchor: [35, 145],
-    popupAnchor: [0, -145]
+    popupAnchor: [0, -100]
   })
 }
