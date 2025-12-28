@@ -14,6 +14,21 @@ export default function Sidebar({ sortedCities, sortBy, sortOrder, onSort, onCit
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
+  // Prevent body scroll when sheet is expanded on mobile
+  useEffect(() => {
+    if (!isMobile) return
+
+    if (sheetPosition === 'expanded') {
+      document.body.classList.add('sheet-open')
+    } else {
+      document.body.classList.remove('sheet-open')
+    }
+
+    return () => {
+      document.body.classList.remove('sheet-open')
+    }
+  }, [sheetPosition, isMobile])
+
   // Update position class when sheetPosition changes
   useEffect(() => {
     const sidebar = sidebarRef.current
@@ -132,38 +147,43 @@ export default function Sidebar({ sortedCities, sortBy, sortOrder, onSort, onCit
     }
   }, [isMobile, sheetPosition, setSheetPosition])
 
-  // Swipe down on sheet to close (when expanded)
+  // Combined swipe gestures - swipe up to expand, down to close
   useEffect(() => {
     const sidebar = sidebarRef.current
     if (!sidebar || !isMobile) return
 
     let touchStartY = 0
-    let isSwiping = false
+    let isTracking = false
 
     const onTouchStart = (e) => {
-      // Only track if sheet is expanded and touch is near top
-      if (sheetPosition === 'expanded') {
-        const touch = e.touches[0]
-        touchStartY = touch.clientY
-        isSwiping = true
-      }
+      const touch = e.touches[0]
+      touchStartY = touch.clientY
+      isTracking = true
     }
 
     const onTouchMove = (e) => {
-      if (!isSwiping || sheetPosition !== 'expanded') return
+      if (!isTracking) return
 
       const touch = e.touches[0]
       const deltaY = touch.clientY - touchStartY
 
-      // Only if swiping down from top area
-      if (deltaY > 50 && touch.clientY < 150) {
-        isSwiping = false
+      // Check if we're scrolling in the cities list
+      const citiesList = citiesListRef.current
+      const isScrollingList = citiesList && e.target.closest('.cities-list')
+
+      if (sheetPosition === 'collapsed' && deltaY < -20) {
+        // Swipe up to expand
+        isTracking = false
+        setSheetPosition('expanded')
+      } else if (sheetPosition === 'expanded' && deltaY > 50 && touch.clientY < 150 && !isScrollingList) {
+        // Swipe down from top area to close, but NOT when scrolling in cities list
+        isTracking = false
         setSheetPosition('collapsed')
       }
     }
 
     const onTouchEnd = () => {
-      isSwiping = false
+      isTracking = false
     }
 
     sidebar.addEventListener('touchstart', onTouchStart, { passive: true })
@@ -177,51 +197,7 @@ export default function Sidebar({ sortedCities, sortBy, sortOrder, onSort, onCit
     }
   }, [isMobile, sheetPosition, setSheetPosition])
 
-  // Swipe up to expand (more sensitive) - works anywhere in sidebar
-  useEffect(() => {
-    const sidebar = sidebarRef.current
-    if (!sidebar || !isMobile) return
-
-    let touchStartY = 0
-    let isSwipeUp = false
-
-    const onTouchStart = (e) => {
-      if (sheetPosition === 'collapsed') {
-        const touch = e.touches[0]
-        touchStartY = touch.clientY
-        isSwipeUp = true
-      }
-    }
-
-    const onTouchMove = (e) => {
-      if (!isSwipeUp || sheetPosition !== 'collapsed') return
-
-      const touch = e.touches[0]
-      const deltaY = touch.clientY - touchStartY
-
-      // Swipe up (negative deltaY) - more sensitive, lower threshold
-      if (deltaY < -20) {
-        isSwipeUp = false
-        setSheetPosition('expanded')
-      }
-    }
-
-    const onTouchEnd = () => {
-      isSwipeUp = false
-    }
-
-    sidebar.addEventListener('touchstart', onTouchStart, { passive: true })
-    sidebar.addEventListener('touchmove', onTouchMove, { passive: true })
-    sidebar.addEventListener('touchend', onTouchEnd)
-
-    return () => {
-      sidebar.removeEventListener('touchstart', onTouchStart)
-      sidebar.removeEventListener('touchmove', onTouchMove)
-      sidebar.removeEventListener('touchend', onTouchEnd)
-    }
-  }, [isMobile, sheetPosition, setSheetPosition])
-
-  // Expand on click (when collapsed) - cities list and search area
+  // Expand interactions - click and focus
   useEffect(() => {
     if (!isMobile || sheetPosition === 'expanded') return
 
@@ -232,29 +208,20 @@ export default function Sidebar({ sortedCities, sortBy, sortOrder, onSort, onCit
     const searchContainer = sidebar.querySelector('.search-container')
     const searchInput = sidebar.querySelector('.search-input')
 
+    const expandIfNeeded = () => {
+      if (sheetPosition === 'collapsed') {
+        setSheetPosition('expanded')
+      }
+    }
+
     const expandSheet = (e) => {
-      // Don't expand if clicking on interactive elements (except search input background)
       if (e.target.closest('button') || e.target.closest('.city-list-item')) {
         return
       }
-      if (sheetPosition === 'collapsed') {
-        setSheetPosition('expanded')
-      }
+      expandIfNeeded()
     }
 
-    const expandOnFocus = () => {
-      if (sheetPosition === 'collapsed') {
-        setSheetPosition('expanded')
-      }
-      // Scroll search input into view after keyboard opens
-      setTimeout(() => {
-        if (searchInput && 'scrollIntoView' in searchInput) {
-          searchInput.scrollIntoView({ behavior: 'smooth', block: 'center' })
-        }
-      }, 300)
-    }
-
-    // Add click handlers to expandable areas
+    // Click handlers
     if (citiesList) {
       citiesList.addEventListener('click', expandSheet)
     }
@@ -262,9 +229,16 @@ export default function Sidebar({ sortedCities, sortBy, sortOrder, onSort, onCit
       searchContainer.addEventListener('click', expandSheet)
     }
 
-    // Expand when search input is focused
+    // Focus handler
     if (searchInput) {
-      searchInput.addEventListener('focus', expandOnFocus)
+      searchInput.addEventListener('focus', () => {
+        expandIfNeeded()
+        setTimeout(() => {
+          if (searchInput && 'scrollIntoView' in searchInput) {
+            searchInput.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          }
+        }, 300)
+      })
     }
 
     return () => {
@@ -275,7 +249,7 @@ export default function Sidebar({ sortedCities, sortBy, sortOrder, onSort, onCit
         searchContainer.removeEventListener('click', expandSheet)
       }
       if (searchInput) {
-        searchInput.removeEventListener('focus', expandOnFocus)
+        searchInput.removeEventListener('focus', expandIfNeeded)
       }
     }
   }, [isMobile, sheetPosition, setSheetPosition])
@@ -305,14 +279,13 @@ export default function Sidebar({ sortedCities, sortBy, sortOrder, onSort, onCit
     }
   }
 
+  const closeSheet = () => setSheetPosition('collapsed')
+
   return (
     <>
       {/* Mobile backdrop */}
       {isMobile && sheetPosition === 'expanded' && (
-        <div
-          className="mobile-backdrop"
-          onClick={() => setSheetPosition('collapsed')}
-        />
+        <div className="mobile-backdrop" onClick={closeSheet} />
       )}
 
       <aside ref={sidebarRef} className="sidebar">
@@ -323,7 +296,7 @@ export default function Sidebar({ sortedCities, sortBy, sortOrder, onSort, onCit
         {isMobile && sheetPosition === 'expanded' && (
           <button
             className="mobile-close-button"
-            onClick={() => setSheetPosition('collapsed')}
+            onClick={closeSheet}
             aria-label="Close"
           >
             ✕
@@ -380,30 +353,15 @@ export default function Sidebar({ sortedCities, sortBy, sortOrder, onSort, onCit
 
       {/* Sort Buttons */}
       <div className="sort-buttons">
-        <button
-          className={`sort-btn ${sortBy === 'name' ? 'active' : ''}`}
-          onClick={() => onSort('name')}
-        >
-          Name {sortBy === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
-        </button>
-        <button
-          className={`sort-btn ${sortBy === 'country' ? 'active' : ''}`}
-          onClick={() => onSort('country')}
-        >
-          Country {sortBy === 'country' && (sortOrder === 'asc' ? '↑' : '↓')}
-        </button>
-        <button
-          className={`sort-btn ${sortBy === 'temp' ? 'active' : ''}`}
-          onClick={() => onSort('temp')}
-        >
-          Temp {sortBy === 'temp' && (sortOrder === 'asc' ? '↑' : '↓')}
-        </button>
-        <button
-          className={`sort-btn ${sortBy === 'wind' ? 'active' : ''}`}
-          onClick={() => onSort('wind')}
-        >
-          Wind {sortBy === 'wind' && (sortOrder === 'asc' ? '↑' : '↓')}
-        </button>
+        {['name', 'country', 'temp', 'wind'].map((sortKey) => (
+          <button
+            key={sortKey}
+            className={`sort-btn ${sortBy === sortKey ? 'active' : ''}`}
+            onClick={() => onSort(sortKey)}
+          >
+            {sortKey.charAt(0).toUpperCase() + sortKey.slice(1)} {sortBy === sortKey && (sortOrder === 'asc' ? '↑' : '↓')}
+          </button>
+        ))}
       </div>
 
       <div className="cities-list" ref={citiesListRef}>

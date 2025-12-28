@@ -330,6 +330,22 @@ body {
   padding: 0.5rem 0;
 }
 
+/* Mobile: Make cities list scrollable when sheet is expanded */
+@media (max-width: 768px) {
+  /* Close button stays fixed */
+  .sidebar.sheet-expanded .mobile-close-button {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 10;
+  }
+
+  /* Cities list scrolls naturally with everything else */
+  .sidebar.sheet-expanded .cities-list {
+    /* Let it scroll naturally with parent */
+  }
+}
+
 /* Progressive Loading Indicator */
 .loading-more {
   display: flex;
@@ -586,6 +602,13 @@ body {
 
 /* Responsive */
 @media (max-width: 768px) {
+  /* Prevent body scroll when sheet is expanded */
+  body.sheet-open {
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+  }
+
   .app-header {
     left: 0;
     padding: 0.75rem 1rem;
@@ -650,6 +673,9 @@ body {
   .sidebar {
     width: 100%;
     height: 100vh;
+    max-height: 100vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
     top: auto;
     bottom: 0;
     border-top: 1px solid #e5e7eb;
@@ -664,6 +690,16 @@ body {
   .sidebar.sheet-expanded {
     transform: translateY(0);
     transition: transform 0.5s cubic-bezier(0.32, 0.72, 0, 1);
+    height: 100vh;
+    max-height: 100vh;
+    height: -webkit-fill-available;
+    max-height: -webkit-fill-available;
+    /* Let the entire sidebar scroll naturally */
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    /* Add padding for safe area at bottom */
+    padding-bottom: env(safe-area-inset-bottom);
   }
 
   .sidebar.dragging {

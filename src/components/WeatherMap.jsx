@@ -134,9 +134,7 @@ export default function WeatherMap({ weatherData, selectedCity, onCityClick }) {
                 click: () => onCityClick(city)
               }}
             >
-              <Popup
-                offset={typeof window !== 'undefined' && window.innerWidth <= 768 ? [0, -40] : [0, 0]}
-              >
+              <Popup>
                 <div className="popup-content">
                   <h3>{city.name}, {city.country}</h3>
                   <div className="popup-weather">
