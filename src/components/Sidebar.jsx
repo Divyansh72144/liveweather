@@ -246,6 +246,12 @@ export default function Sidebar({ sortedCities, sortBy, sortOrder, onSort, onCit
       if (sheetPosition === 'collapsed') {
         setSheetPosition('expanded')
       }
+      // Scroll search input into view after keyboard opens
+      setTimeout(() => {
+        if (searchInput && 'scrollIntoView' in searchInput) {
+          searchInput.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }
+      }, 300)
     }
 
     // Add click handlers to expandable areas
