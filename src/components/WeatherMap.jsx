@@ -11,6 +11,18 @@ const WORLD_BOUNDS = [
   [90, 180],
 ]
 
+// Calculate local time for a city based on its longitude
+function getCityLocalTime(lon) {
+  const now = new Date()
+  const utc = now.getTime() + (now.getTimezoneOffset() * 60000)
+
+  // Calculate timezone offset from longitude (each 15° = 1 hour)
+  const timezoneOffset = Math.round(lon / 15) * 60 * 60000
+
+  const cityTime = new Date(utc + timezoneOffset)
+  return cityTime.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false })
+}
+
 function MapController({ selectedCity, markerRefs }) {
   const map = useMap()
 
@@ -157,7 +169,7 @@ export default function WeatherMap({ filteredCities, selectedCity, onCityClick }
                     </button>
                   </div>
                   <div className="popup-time">
-                    Local time: {new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false })}
+                    Local time: {getCityLocalTime(city.lon)}
                   </div>
                 </div>
               </Popup>
