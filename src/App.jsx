@@ -132,7 +132,7 @@ function App() {
       />
 
       <WeatherMap
-        weatherData={weatherData}
+        filteredCities={sortedCities}
         selectedCity={selectedCity}
         onCityClick={handleCityClick}
       />

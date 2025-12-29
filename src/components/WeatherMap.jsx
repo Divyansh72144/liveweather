@@ -2,7 +2,6 @@ import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet'
 import MarkerClusterGroup from 'react-leaflet-cluster'
 import L from 'leaflet'
 import { useEffect, useRef } from 'react'
-import { CITIES } from '../../backend/cities.js'
 
 import { createWeatherIcon } from '../utils/leafletConfig'
 import { getWeatherIconUrl, getWeatherDescription } from '../utils/weather'
@@ -42,7 +41,7 @@ function MapController({ selectedCity, markerRefs }) {
   return null
 }
 
-export default function WeatherMap({ weatherData, selectedCity, onCityClick }) {
+export default function WeatherMap({ filteredCities, selectedCity, onCityClick }) {
   const minZoom = typeof window !== 'undefined' && window.innerHeight > 960 ? 3.2 : 2
   const markerRefs = useRef({})
 
@@ -110,8 +109,8 @@ export default function WeatherMap({ weatherData, selectedCity, onCityClick }) {
           })
         }}
       >
-        {CITIES.map((city) => {
-          const weather = weatherData[city.id]
+        {filteredCities.map((city) => {
+          const weather = city.weather
           if (!weather) return null
 
           return (
