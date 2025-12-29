@@ -41,20 +41,23 @@ function App() {
     fetchAllWeather()
   }, [])
 
-  // Sort and filter cities based on selected criteria and search query
-  const sortedCities = useMemo(() => {
-    const citiesWithWeather = CITIES.map((city) => ({
+  // All cities with weather data (for map - never filtered by search)
+  const allCitiesWithWeather = useMemo(() => {
+    return CITIES.map((city) => ({
       ...city,
       weather: weatherData[city.id] || null
     })).filter(city => city.weather)
+  }, [weatherData])
 
+  // Sort and filter cities based on selected criteria and search query (for sidebar)
+  const sortedCities = useMemo(() => {
     // Apply search filter
     let filteredCities = searchQuery
-      ? citiesWithWeather.filter(city =>
+      ? allCitiesWithWeather.filter(city =>
           city.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
           city.country.toLowerCase().includes(searchQuery.toLowerCase())
         )
-      : citiesWithWeather
+      : allCitiesWithWeather
 
     // Apply weather filter
     if (weatherFilter !== 'all') {
@@ -86,7 +89,7 @@ function App() {
       }
       return 0
     })
-  }, [weatherData, sortBy, sortOrder, searchQuery, weatherFilter])
+  }, [allCitiesWithWeather, sortBy, sortOrder, searchQuery, weatherFilter])
 
   const handleSort = (criteria) => {
     if (sortBy === criteria) {
@@ -132,7 +135,7 @@ function App() {
       />
 
       <WeatherMap
-        filteredCities={sortedCities}
+        filteredCities={allCitiesWithWeather}
         selectedCity={selectedCity}
         onCityClick={handleCityClick}
       />

@@ -322,12 +322,14 @@ function MapController({ selectedCity, markerRefs }) {
 
   useEffect(() => {
     if (selectedCity) {
+      // Stop any ongoing animation
+      map.stop()
+
       // Check if mobile for different offset
       const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768
-      // Increase lat offset on mobile to position popup higher and avoid sidebar
       const latOffset = isMobile ? -0.1 : -0.05
 
-      // Fly to city with small offset to position popup lower
+      // Fly to city with small offset
       map.flyTo([selectedCity.lat - latOffset, selectedCity.lon], 10, {
         duration: 1.5
       })
