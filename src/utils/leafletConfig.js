@@ -39,7 +39,7 @@ export const createWeatherIcon = (weatherCode, temp, cityName, countryName) => {
         ">
           <img src="${iconUrl}" style="width: 42px; height: 42px;" alt="weather" />
         </div>
-        <div style="
+        <div class="marker-temp" style="
           margin-top: 2px;
           font-size: 11px;
           font-weight: 600;
@@ -50,7 +50,7 @@ export const createWeatherIcon = (weatherCode, temp, cityName, countryName) => {
           box-shadow: 0 2px 4px rgba(0,0,0,0.3);
           white-space: nowrap;
         ">${temp}°C</div>
-        <div style="
+        <div class="marker-desc" style="
           margin-top: 2px;
           font-size: 9px;
           font-weight: 500;
@@ -62,7 +62,7 @@ export const createWeatherIcon = (weatherCode, temp, cityName, countryName) => {
           white-space: nowrap;
           text-align: center;
         ">${description}</div>
-        <div style="
+        <div class="marker-name" style="
           margin-top: 2px;
           font-size: 10px;
           font-weight: 600;
@@ -71,9 +71,9 @@ export const createWeatherIcon = (weatherCode, temp, cityName, countryName) => {
           padding: 3px 6px;
           border-radius: 8px;
           box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-          white-space: nowrap;
+          overflow-wrap: break-word; word-break: break-word; line-height: 1.3;
           text-align: center;
-          max-width: 100px;
+          max-width: 130px;
         ">${cityName}, ${countryName}</div>
       </div>
     `,
