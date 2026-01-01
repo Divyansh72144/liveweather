@@ -1,6 +1,6 @@
 # 🌍 Hazard Map
 
-Global weather visualization dashboard displaying real-time weather data for 500+ cities on an interactive map.
+Global weather visualization dashboard displaying real-time weather data for 450+ cities on an interactive map.
 
 ## 🏗️ Architecture
 
@@ -15,7 +15,7 @@ graph TB
     end
 
     subgraph CACHE ["💾 DATA CACHE"]
-        REDIS["Upstash Redis<br/>━━━━━━━━━━━━━━━━━━━━<br/>• 500 cities weather data<br/>• 2-hour TTL<br/>• Global edge distribution"]
+        REDIS["Upstash Redis<br/>━━━━━━━━━━━━━━━━━━━━<br/>• 450+ cities weather data<br/>• 2-hour TTL<br/>• Global edge distribution"]
     end
 
     subgraph EXTERNAL ["🌍 EXTERNAL"]
