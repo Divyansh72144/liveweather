@@ -1,16 +1,92 @@
-# React + Vite
+# 🌍 Hazard Map
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Global weather visualization dashboard displaying real-time weather data for 500+ cities on an interactive map.
 
-Currently, two official plugins are available:
+## 🏗️ Architecture
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+```mermaid
+graph TB
+    subgraph FRONTEND ["🎨 FRONTEND"]
+        APP["React App (Vite + React 19)<br/>━━━━━━━━━━━━━━━━━━━━<br/>• App.jsx - State management<br/>• WeatherMap.jsx - Leaflet map<br/>• Sidebar.jsx - City list + search<br/>• Custom hooks - Gestures<br/>• Utilities - API, timezone, weather"]
+    end
 
-## React Compiler
+    subgraph BACKEND ["⚡ BACKEND API"]
+        API["Vercel Serverless Functions<br/>━━━━━━━━━━━━━━━━━━━━<br/>• GET /api/weather - Fetch all cities<br/>• GET /api/health - Cache status<br/>• POST /api/prewarm-cache - Refresh cache"]
+    end
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+    subgraph CACHE ["💾 DATA CACHE"]
+        REDIS["Upstash Redis<br/>━━━━━━━━━━━━━━━━━━━━<br/>• 500 cities weather data<br/>• 24-hour TTL<br/>• Global edge distribution"]
+    end
 
-## Expanding the ESLint configuration
+    subgraph EXTERNAL ["🌍 EXTERNAL"]
+        OPEN["Open-Meteo API<br/>━━━━━━━━━━━━━━━━━━━━<br/>• Weather data source"]
+        CRON["cron-job.org<br/>━━━━━━━━━━━━━━━━━━━━<br/>• Triggers every 24 hours"]
+    end
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+    APP -->|"1. GET /api/weather"| API
+    API -->|"2. Read cache"| REDIS
+    REDIS -->|"3. Return data"| API
+    API -->|"4. JSON response"| APP
+
+    CRON -->|"5. Trigger refresh"| API
+    API -->|"6. Fetch fresh data"| OPEN
+    OPEN -->|"7. Weather data"| API
+    API -->|"8. Update cache"| REDIS
+
+    style APP fill:#61dafb,color:#fff
+    style API fill:#000,color:#fff
+    style REDIS fill:#dc3545,color:#fff
+    style OPEN fill:#28a745,color:#fff
+    style CRON fill:#ffc107,color:#000
+```
+
+## ✨ Features
+
+- Interactive map with marker clustering
+- Real-time weather data (temperature, wind, conditions)
+- Search, filter, and sort cities
+- Mobile-optimized with smooth gestures
+- Accurate local time for each city
+
+## 🚀 Tech Stack
+
+**Frontend:** React 19, Vite 7, Leaflet, tz-lookup
+**Backend:** Vercel Serverless, Upstash Redis
+**Data:** Open-Meteo API (free, no API key needed)
+
+## 📦 Setup
+
+```bash
+npm install
+npm run dev
+```
+
+## 📂 Project Structure
+
+```
+src/
+├── components/       # React components
+├── hooks/           # Custom gesture hooks
+├── services/        # API client
+├── utils/           # Helper functions
+├── data/            # City data
+└── App.jsx          # Main app
+```
+
+## 🔄 How It Works
+
+1. **Cron** → Refreshes cache every 24 hours
+2. **Frontend** → Fetches cached weather from API
+3. **Users** → Browse map, search cities, see weather
+
+## 🛠️ Commands
+
+```bash
+npm run dev          # Start dev server
+npm run build        # Build for production
+npm run lint         # Run ESLint
+```
+
+---
+
+**Built with React + Vite + Leaflet**
