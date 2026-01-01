@@ -15,12 +15,12 @@ graph TB
     end
 
     subgraph CACHE ["💾 DATA CACHE"]
-        REDIS["Upstash Redis<br/>━━━━━━━━━━━━━━━━━━━━<br/>• 500 cities weather data<br/>• 24-hour TTL<br/>• Global edge distribution"]
+        REDIS["Upstash Redis<br/>━━━━━━━━━━━━━━━━━━━━<br/>• 500 cities weather data<br/>• 2-hour TTL<br/>• Global edge distribution"]
     end
 
     subgraph EXTERNAL ["🌍 EXTERNAL"]
         OPEN["Open-Meteo API<br/>━━━━━━━━━━━━━━━━━━━━<br/>• Weather data source"]
-        CRON["cron-job.org<br/>━━━━━━━━━━━━━━━━━━━━<br/>• Triggers every 24 hours"]
+        CRON["cron-job.org<br/>━━━━━━━━━━━━━━━━━━━━<br/>• Triggers every 2 hours"]
     end
 
     APP -->|"1. GET /api/weather"| API
@@ -75,7 +75,7 @@ src/
 
 ## 🔄 How It Works
 
-1. **Cron** → Refreshes cache every 24 hours
+1. **Cron** → Refreshes cache every 2 hours
 2. **Frontend** → Fetches cached weather from API
 3. **Users** → Browse map, search cities, see weather
 
