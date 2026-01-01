@@ -753,10 +753,6 @@ body {
     font-size: 0.65rem;
   }
 
-  .popup-time {
-    display: none; /* Hide time on mobile to save space */
-  }
-
   /* Handle iOS keyboard - keep sidebar positioned correctly */
   .sidebar.sheet-expanded {
     position: fixed;

@@ -8,8 +8,7 @@ import Header from './components/Header'
 import Sidebar from './components/Sidebar'
 import WeatherMap from './components/WeatherMap'
 import { getWeatherCategory } from './utils/weather'
-
-const BACKEND_API = import.meta.env.VITE_BACKEND_API_URL || 'http://localhost:4000'
+import { api } from './services/api'
 
 function App() {
   const [sheetPosition, setSheetPosition] = useState('collapsed') // collapsed, half, expanded
@@ -24,8 +23,7 @@ function App() {
   useEffect(() => {
     const fetchAllWeather = async () => {
       try {
-        const response = await fetch(`${BACKEND_API}/weather`)
-        const result = await response.json()
+        const result = await api.weather.getAllWeather()
 
         console.log(`Data source: ${result.source}, cities: ${Object.keys(result.data).length}`)
         setWeatherData(result.data)
