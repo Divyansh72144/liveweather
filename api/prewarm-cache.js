@@ -20,9 +20,9 @@ export default async function handler(req, res) {
 
   for (let i = 0; i < cities.length; i += BATCH_SIZE) {
     const batch = cities.slice(i, i + BATCH_SIZE)
-    const responses = await Promise.all(batch.map(fetchWithRetry))
+    const responses = await Promise.all(batch.map(city => fetchWithRetry(city)))
     for (const r of responses) {
-      if (r.success && r.data?.hourly) {
+      if (r && r.success && r.data?.hourly) {
         const processed = processHourlyData(r.data)
         await redis.set(`city:${r.city.id}`, {
           data: processed,
