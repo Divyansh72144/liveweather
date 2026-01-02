@@ -1,39 +1,25 @@
 const OPEN_METEO_BASE_URL = 'https://api.open-meteo.com/v1/forecast'
 
-export async function fetchWithRetry(city, maxRetries = 3) {
+export async function fetchWithRetry(city, maxRetries = 1) {
   if (!city || !city.lat || !city.lon) {
     console.error('Invalid city object:', city)
     return { success: false, error: 'Invalid city data', city }
   }
 
-  for (let attempt = 0; attempt < maxRetries; attempt++) {
-    try {
-      const url = `${OPEN_METEO_BASE_URL}?latitude=${city.lat}&longitude=${city.lon}&hourly=temperature_2m,relative_humidity_2m,weather_code,windspeed_10m&forecast_days=2`
+  try {
+    const url = `${OPEN_METEO_BASE_URL}?latitude=${city.lat}&longitude=${city.lon}&hourly=temperature_2m,relative_humidity_2m,weather_code,windspeed_10m&forecast_days=2`
 
-      const response = await fetch(url, {
-        timeout: 10000 
-      })
+    const response = await fetch(url)
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-
-      const data = await response.json()
-      return { success: true, data, city }
-    } catch (error) {
-      console.error(`Attempt ${attempt + 1} failed for ${city?.name || 'unknown'}:`, error.message)
-
-      if (attempt === maxRetries - 1) {
-        console.error(`Failed to fetch data for ${city?.name} after ${maxRetries} attempts`)
-        return { success: false, error: error.message, city }
-      }
-      // Wait before retrying (exponential backoff)
-      await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000))
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
     }
-  }
 
-  // Fallback return (should never reach here)
-  return { success: false, error: 'Max retries exceeded', city }
+    const data = await response.json()
+    return { success: true, data, city }
+  } catch (error) {
+    return { success: false, error: error.message, city }
+  }
 }
 
 export function processHourlyData(data) {
