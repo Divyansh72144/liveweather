@@ -10,9 +10,7 @@ export async function fetchWithRetry(city, maxRetries = 3) {
     try {
       const url = `${OPEN_METEO_BASE_URL}?latitude=${city.lat}&longitude=${city.lon}&hourly=temperature_2m,relative_humidity_2m,weather_code,windspeed_10m&forecast_days=2`
 
-      const response = await fetch(url, {
-        timeout: 10000 // 10 second timeout
-      })
+      const response = await fetch(url)
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
