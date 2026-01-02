@@ -21,7 +21,9 @@ export default async function handler(req, res) {
   let loaded = 0
   let totalFetchTime = 0
   let totalRedisTime = 0
+  const failedCities = []
 
+  // First pass: Load all cities
   for (let i = 0; i < cities.length; i += BATCH_SIZE) {
     const batchStart = Date.now()
 
@@ -35,18 +37,39 @@ export default async function handler(req, res) {
 
     // Prepare all Redis writes for this batch
     const redisPromises = []
+    let batchLoaded = 0
+    let batchFailed = 0
+
     for (const r of responses) {
       if (r && r.success && r.data?.hourly) {
-        const processed = processHourlyData(r.data)
-        redisPromises.push(
-          redis.set(`city:${r.city.id}`, {
-            data: processed,
-            lastUpdated: Date.now()
-          })
-        )
-        loaded++
+        try {
+          const processed = processHourlyData(r.data)
+          if (processed) {
+            redisPromises.push(
+              redis.set(`city:${r.city.id}`, {
+                data: processed,
+                lastUpdated: Date.now()
+              })
+            )
+            batchLoaded++
+          } else {
+            batchFailed++
+            console.error(`${r.city.name}: processHourlyData returned null`)
+            failedCities.push(r.city)
+          }
+        } catch (err) {
+          batchFailed++
+          console.error(` ${r.city.name}: ${err.message}`)
+          failedCities.push(r.city)
+        }
+      } else {
+        batchFailed++
+        console.error(`${r?.city?.name || 'unknown'}: ${r?.error || 'No data or hourly'}`)
+        if (r?.city) failedCities.push(r.city)
       }
     }
+
+    loaded += batchLoaded
 
     // Measure Redis time
     const redisStart = Date.now()
@@ -55,7 +78,47 @@ export default async function handler(req, res) {
     totalRedisTime += redisTime
 
     const batchTime = Date.now() - batchStart
-    console.log(`Batch ${Math.floor(i/BATCH_SIZE) + 1}: Fetch=${fetchTime}ms, Redis=${redisTime}ms, Total=${batchTime}ms`)
+    console.log(`Batch ${Math.floor(i/BATCH_SIZE) + 1}: Loaded=${batchLoaded}, Failed=${batchFailed}, Fetch=${fetchTime}ms, Redis=${redisTime}ms, Total=${batchTime}ms`)
+  }
+
+  // Second pass: Retry failed cities
+  if (failedCities.length > 0) {
+    console.log(`\n🔄 Retrying ${failedCities.length} failed cities...`)
+
+    for (let i = 0; i < failedCities.length; i += BATCH_SIZE) {
+      const batch = failedCities.slice(i, i + BATCH_SIZE)
+
+      const fetchStart = Date.now()
+      const responses = await Promise.all(batch.map(city => fetchWithRetry(city)))
+      const fetchTime = Date.now() - fetchStart
+      totalFetchTime += fetchTime
+
+      const redisPromises = []
+
+      for (const r of responses) {
+        if (r && r.success && r.data?.hourly) {
+          try {
+            const processed = processHourlyData(r.data)
+            if (processed) {
+              redisPromises.push(
+                redis.set(`city:${r.city.id}`, {
+                  data: processed,
+                  lastUpdated: Date.now()
+                })
+              )
+              loaded++
+              console.log(`✅ ${r.city.name}: Retry successful`)
+            } else {
+              console.error(`❌ ${r.city.name}: processHourlyData returned null (retry)`)
+            }
+          } catch (err) {
+            console.error(`❌ ${r.city.name}: ${err.message} (retry)`)
+          }
+        }
+      }
+
+      await Promise.all(redisPromises)
+    }
   }
 
   const totalTime = ((Date.now() - startTime) / 1000).toFixed(2)
