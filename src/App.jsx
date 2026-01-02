@@ -8,6 +8,7 @@ import Header from './components/Header'
 import Sidebar from './components/Sidebar'
 import WeatherMap from './components/WeatherMap'
 import { getWeatherCategory } from './utils/weather'
+import { getCurrentWeatherFromHourly } from './utils/getCurrentWeather'
 import { api } from './services/api'
 
 function App() {
@@ -41,10 +42,18 @@ function App() {
 
   // All cities with weather data (for map - never filtered by search)
   const allCitiesWithWeather = useMemo(() => {
-    return CITIES.map((city) => ({
-      ...city,
-      weather: weatherData[city.id] || null
-    })).filter(city => city.weather)
+    return CITIES.map((city) => {
+      const cachedWeather = weatherData[city.id]
+      if (!cachedWeather) return null
+
+      // Get current hour from hourly forecast to ensure data is always current
+      const currentWeather = getCurrentWeatherFromHourly(cachedWeather)
+
+      return {
+        ...city,
+        weather: currentWeather
+      }
+    }).filter(city => city && city.weather)
   }, [weatherData])
 
   // Sort and filter cities based on selected criteria and search query (for sidebar)

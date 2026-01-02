@@ -41,19 +41,13 @@ export function processHourlyData(data) {
     return null
   }
 
-  // Find the current hour index from the time array
+  // Calculate index directly using date math (O(1) instead of looping)
   const now = new Date()
-  const currentHourString = now.toISOString().slice(0, 13) // Format: "2024-01-15T14"
+  const firstTime = new Date(data.hourly.time[0])
+  const hoursDiff = Math.floor((now - firstTime) / (1000 * 60 * 60))
+  const startIndex = Math.max(0, Math.min(hoursDiff, data.hourly.time.length - 1))
 
-  let startIndex = 0
-  for (let i = 0; i < data.hourly.time.length; i++) {
-    if (data.hourly.time[i].startsWith(currentHourString)) {
-      startIndex = i
-      break
-    }
-  }
-
-  // Get values with fallback to index 0 if not found
+  // Get values with fallback to index 0 if out of bounds
   const temperature = data.hourly.temperature_2m?.[startIndex] ?? data.hourly.temperature_2m?.[0]
   const windSpeed = data.hourly.windspeed_10m?.[startIndex] ?? data.hourly.windspeed_10m?.[0]
   const humidity = data.hourly.relative_humidity_2m?.[startIndex] ?? data.hourly.relative_humidity_2m?.[0]
