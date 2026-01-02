@@ -33,7 +33,7 @@ graph TB
     OPEN -->|"7. Weather data"| API
     API -->|"8. Update cache"| REDIS
 
-    style APP fill:#61dafb,color:#fff
+    style APP fill:#61dafb,color:#000
     style API fill:#000,color:#fff
     style REDIS fill:#dc3545,color:#fff
     style OPEN fill:#28a745,color:#fff
