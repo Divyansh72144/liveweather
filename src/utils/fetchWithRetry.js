@@ -8,7 +8,7 @@ export async function fetchWithRetry(city, maxRetries = 3) {
 
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
-      const url = `${OPEN_METEO_BASE_URL}?latitude=${city.lat}&longitude=${city.lon}&hourly=temperature_2m,relative_humidity_2m,weather_code&forecast_days=2`
+      const url = `${OPEN_METEO_BASE_URL}?latitude=${city.lat}&longitude=${city.lon}&hourly=temperature_2m,relative_humidity_2m,weather_code,windspeed_10m&forecast_days=2`
 
       const response = await fetch(url, {
         timeout: 10000 // 10 second timeout
@@ -37,22 +37,40 @@ export async function fetchWithRetry(city, maxRetries = 3) {
 }
 
 export function processHourlyData(data) {
-  if (!data.hourly) return null
+  if (!data.hourly || !data.hourly.time || !data.hourly.time.length) {
+    return null
+  }
 
-  const currentHour = new Date().getUTCHours()
-  const startIndex = currentHour
+  // Find the current hour index from the time array
+  const now = new Date()
+  const currentHourString = now.toISOString().slice(0, 13) // Format: "2024-01-15T14"
 
+  let startIndex = 0
+  for (let i = 0; i < data.hourly.time.length; i++) {
+    if (data.hourly.time[i].startsWith(currentHourString)) {
+      startIndex = i
+      break
+    }
+  }
+
+  // Get values with fallback to index 0 if not found
+  const temperature = data.hourly.temperature_2m?.[startIndex] ?? data.hourly.temperature_2m?.[0]
+  const windSpeed = data.hourly.windspeed_10m?.[startIndex] ?? data.hourly.windspeed_10m?.[0]
+  const humidity = data.hourly.relative_humidity_2m?.[startIndex] ?? data.hourly.relative_humidity_2m?.[0]
+  const weatherCode = data.hourly.weather_code?.[startIndex] ?? data.hourly.weather_code?.[0]
+
+  // Return flat structure that frontend expects
   return {
-    current: {
-      temperature: data.hourly.temperature_2m[startIndex],
-      humidity: data.hourly.relative_humidity_2m[startIndex],
-      weatherCode: data.hourly.weather_code[startIndex]
-    },
+    temperature,
+    windSpeed,
+    humidity,
+    weatherCode,
     hourly: {
       time: data.hourly.time.slice(startIndex, startIndex + 24),
-      temperature: data.hourly.temperature_2m.slice(startIndex, startIndex + 24),
-      humidity: data.hourly.relative_humidity_2m.slice(startIndex, startIndex + 24),
-      weatherCode: data.hourly.weather_code.slice(startIndex, startIndex + 24)
+      temperature: data.hourly.temperature_2m?.slice(startIndex, startIndex + 24),
+      humidity: data.hourly.relative_humidity_2m?.slice(startIndex, startIndex + 24),
+      weatherCode: data.hourly.weather_code?.slice(startIndex, startIndex + 24),
+      windSpeed: data.hourly.windspeed_10m?.slice(startIndex, startIndex + 24)
     }
   }
 }
