@@ -1,5 +1,5 @@
-import { getCities } from '../backend/cities.js'
-import { fetchWithRetry, processHourlyData } from '../backend/utils/fetchWithRetry.js'
+import { getCities } from '../src/data/cities.js'
+import { fetchWithRetry, processHourlyData } from '../src/utils/fetchWithRetry.js'
 import { Redis } from '@upstash/redis'
 
 const redis = new Redis({
